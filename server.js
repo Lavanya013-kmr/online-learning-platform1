@@ -42,6 +42,11 @@ const QuizResult = require("./models/QuizResult");
 const Discussion = require("./models/Discussion");
 
 const app = express();
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 const discussionRoutes = require("./route/discussions");
 
 app.use((req, res, next) => {
@@ -58,18 +63,14 @@ app.use("/uploads", express.static("uploads"));
 app.use("/models", express.static(path.join(__dirname, "public")));
 app.use("/api/discussions", discussionRoutes);
 
-// ✅ Connect MongoDB
-mongoose
-  .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/sspm", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+// ✅ Connect MongoD
+console.log("MONGO URI =", process.env.MONGO_URI);
+  mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
+  .catch(err => {
+    console.error("❌ MongoDB error:", err);
     process.exit(1);
   });
-
 // ✅ JWT Secret
 const JWT_SECRET = "305d963719cf4c43bb471d0e446ee73029550d6592e80045844b6731f0f48d14fb02615df2753b8827f00bc7f5ec98c74e8b1087529ced81bcfef80f8e433cff";
 
@@ -106,7 +107,7 @@ function auth(requiredRole) {
   };
 }
 
-app.use(express.static(path.join(__dirname, "../fronthend")));
+
 
 app.get("/api", (req, res) => {
   res.send("Backend is running 🚀");
@@ -975,7 +976,7 @@ app.get("/api/course/:id", auth("student"), async (req, res) => {
         title: c.title,
         module: c.module,
         description: c.description,
-        videoUrl: `http://localhost:5000${c.video}`
+        videoUrl: `${req.protocol}://${req.get("host")}${c.video}`
       }))
     });
   } catch (err) {
@@ -1043,7 +1044,7 @@ async function seedSubjects() {
 }
 mongoose.connection.once("open", seedSubjects);
 
-app.use(express.static(path.join(__dirname, "../fronthend")));
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "0.0.0.0", () => {
